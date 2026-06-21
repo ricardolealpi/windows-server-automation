@@ -1,0 +1,28 @@
+# ==============================================================================
+# .gitignore — windows-server-automation
+# ==============================================================================
+
+# --- macOS system files ---
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# --- Windows system files ---
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# --- PowerShell runtime artifacts ---
+# Log files generated at script runtime — may contain plaintext passwords
+*.log
+
+# --- Sensitive data overrides ---
+# Never commit production or real employee CSV files
+*-prod.csv
+*-real.csv
+*-confidential.csv
+
+# --- Editor artifacts ---
+*.swp
+*.swo
+.vscode/
