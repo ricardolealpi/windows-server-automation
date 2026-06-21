@@ -2,7 +2,7 @@
 # Script Name: create-users.ps1
 # Description: Automated Corporate Onboarding System for Windows Server environments.
 #              Generates secure random passwords, ensures strict idempotency,
-#              and maintains centralized persistent logging.
+#              handles naming collisions, and maintains centralized persistent logging.
 # Author: Ricardo Leal
 # ==============================================================================
 
@@ -48,7 +48,7 @@ function New-SecurePassword {
 
 # --- STEP 1: Define Parameters and Paths ---
 $CSVPath = "$PSScriptRoot\employees-template.csv"
-$DomainSuffix = "DC=corp,DC=local" 
+$DomainSuffix = "DC=tecnofacil,DC=es" 
 $BaseOU = "OU=Usuarios,$DomainSuffix" 
 
 # --- STEP 2: Import Active Directory Module ---
@@ -72,6 +72,17 @@ Write-Log -Message "Successfully loaded $($Employees.Count) employees from CSV."
 
 # --- STEP 4: Process Each Employee (Loop) ---
 foreach ($Employee in $Employees) {
+
+    # 1. DATA SANITIZATION: Check for empty mandatory fields BEFORE doing anything
+    if ([String]::IsNullOrWhiteSpace($Employee.FirstName) -or 
+        [String]::IsNullOrWhiteSpace($Employee.LastName) -or 
+        [String]::IsNullOrWhiteSpace($Employee.Department)) {
+        
+        Write-Log -Message "Skipping row: Missing mandatory fields for element: $($Employee.FirstName) $($Employee.LastName)" -Level "ERROR"
+        continue
+    }
+
+    # 2. Clean data and verify structural compliance
     $FirstName  = $Employee.FirstName.Trim()
     $LastName   = $Employee.LastName.Trim()
     $Department = $Employee.Department.Trim()
@@ -79,6 +90,13 @@ foreach ($Employee in $Employees) {
     $Office     = $Employee.Office.Trim()
 
     $sAMAccountName = "$FirstName.$LastName".ToLower()
+
+    # 3. Active Directory Compliance: Username cannot start or end with a dot
+    if ($sAMAccountName.StartsWith(".") -or $sAMAccountName.EndsWith(".")) {
+        Write-Log -Message "Skipping row: Generated username '${sAMAccountName}' is non-compliant." -Level "ERROR"
+        continue
+    }
+
     $TargetOU = "OU=$Department,$BaseOU"
 
     # 4a. Check if the Department OU exists
@@ -87,12 +105,61 @@ foreach ($Employee in $Employees) {
         New-ADOrganizationalUnit -Name $Department -Path $BaseOU -ProtectedFromAccidentalDeletion $false
     }
 
-    # 4b. Idempotency Check
-    $ExistingUser = Get-ADUser -Filter {sAMAccountName -eq $sAMAccountName} -ErrorAction SilentlyContinue
+   # 4b. Smart Idempotency & Collision Handling
+    $BaseAccountName = "$FirstName.$LastName".ToLower()
+    $sAMAccountName = $BaseAccountName
+    $DisplayName = "$FirstName $LastName"
+    $Counter = 1
+    $UserAlreadyProvisioned = $false
 
-    if ($ExistingUser) {
-        Write-Log -Message "User $sAMAccountName already exists. Skipping creation." -Level "SKIP"
+    # Controlled infinite loop to find an available username or confirm existing employee
+    while ($true) {
+        $ExistingUser = Get-ADUser -Filter {sAMAccountName -eq $sAMAccountName} -ErrorAction SilentlyContinue
+        
+        if ($null -eq $ExistingUser) {
+            # The username is available! Break the loop to proceed.
+            break
+        } else {
+            # The username is taken. Is it the same employee? Check if they are in the exact same OU.
+            if ($ExistingUser.DistinguishedName -match "OU=$Department,$BaseOU") {
+                $UserAlreadyProvisioned = $true
+                break
+            }
+            
+            # It's a different employee (Collision). Increment counter for both sAMAccountName and DisplayName.
+            $sAMAccountName = "$BaseAccountName$Counter"
+            $DisplayName = "$FirstName $LastName $Counter"
+            $Counter++
+        }
+    }
+
+    if ($UserAlreadyProvisioned) {
+        Write-Log -Message "User $sAMAccountName ($Department) already exists. Skipping creation." -Level "SKIP"
+        continue 
     } else {
+        # 4c. Create the new User
+        Write-Log -Message "Provisioning new user account: $sAMAccountName" -Level "ACTION"
+        
+        $PlainPassword = New-SecurePassword
+        $Password = ConvertTo-SecureString $PlainPassword -AsPlainText -Force
+
+        # AD Creation with strict uniqueness and complete attributes
+        New-ADUser -Name $DisplayName `
+                   -DisplayName $DisplayName `
+                   -GivenName $FirstName `
+                   -Surname $LastName `
+                   -Department $Department `
+                   -sAMAccountName $sAMAccountName `
+                   -UserPrincipalName "$sAMAccountName@tecnofacil.es" `
+                   -Path $TargetOU `
+                   -Title $Title `
+                   -Office $Office `
+                   -AccountPassword $Password `
+                   -ChangePasswordAtLogon $true `
+                   -Enabled $true
+
+        Write-Log -Message "Temporary password for ${sAMAccountName}: $PlainPassword" -Level "INFO"
+    }else {
         # 4c. Create the new User
         Write-Log -Message "Provisioning new user account: $sAMAccountName" -Level "ACTION"
         
@@ -103,7 +170,7 @@ foreach ($Employee in $Employees) {
                    -GivenName $FirstName `
                    -Surname $LastName `
                    -sAMAccountName $sAMAccountName `
-                   -UserPrincipalName "$sAMAccountName@corp.local" `
+                   -UserPrincipalName "$sAMAccountName@tecnofacil.es" `
                    -Path $TargetOU `
                    -Title $Title `
                    -Office $Office `

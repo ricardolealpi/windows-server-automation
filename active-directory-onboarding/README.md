@@ -14,6 +14,7 @@ In traditional IT environments, creating user accounts and managing organization
 * **Standardized Identity Management:** Automatically generates unique usernames (`firstname.lastname`) and configures core AD attributes (`Title`, `Office`, `UPN`).
 * **Enhanced Security (Zero Hardcoding):** Dynamically generates a unique, cryptographically secure 16-character temporary password for each user in real-time, completely removing hardcoded credentials from the source code. It also enforces the standard policy: **"User must change password at next logon"**.
 * **Centralized Persistent Logging:** Implements a robust `Write-Log` mechanism that records every system state change, warning, and transaction with color-coded console outputs and a persistent historical log file (`onboarding.log`) for security auditing.
+* **Smart Collision Handling:** Resolves naming conflicts (homonyms) across different departments by dynamically incrementing usernames and display names, while maintaining strict idempotency through Distinguished Name (DN) verification.
 
 ---
 
@@ -41,10 +42,6 @@ In traditional IT environments, creating user accounts and managing organization
    git clone [https://github.com/ricardolealpi/windows-server-automation.git](https://github.com/ricardolealpi/windows-server-automation.git)
    ```
 
-   ---
-# Automated Corporate Onboarding System for Windows Server 2022
-(Aquí va toda la documentación técnica detallada en inglés...)
-
 ---
 
 <details>
@@ -64,6 +61,7 @@ En entornos de IT tradicionales, la creación manual de cuentas y la gestión de
 * **Gestión de Identidad Estandarizada:** Genera automáticamente nombres de usuario únicos con el formato `nombre.apellido` y configura atributos esenciales de AD (`Puesto`, `Oficina`, `UPN`).
 * **Seguridad Reforzada (Sin Credenciales Expuestas):** Genera dinámicamente una contraseña temporal única y criptográficamente segura de 16 caracteres para cada usuario en tiempo de ejecución, eliminando por completo las contraseñas escritas en texto plano dentro del código fuente. Aplica la directiva estándar: **"El usuario debe cambiar la contraseña en el próximo inicio de sesión"**.
 * **Registro de Logs Centralizado y Persistente:** Implementa un mecanismo robusto llamado `Write-Log` que registra cada cambio de estado, advertencia y transacción del sistema con marcas de tiempo, salida visual codificada por colores y un archivo de registro histórico persistente (`onboarding.log`) para auditorías de seguridad.
+* **Gestión Inteligente de Colisiones:** Resuelve conflictos de nombres (homónimos) en diferentes departamentos incrementando dinámicamente los nombres de usuario y los nombres para mostrar, manteniendo una estricta idempotencia mediante la verificación del Nombre Distinguido (DN).
 
 ## 🛠️ Tecnologías y Requisitos
 
