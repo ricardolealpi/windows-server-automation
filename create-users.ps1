@@ -5,17 +5,74 @@
 # ==============================================================================
 
 # --- STEP 1: Define Parameters and Paths ---
-# We need to tell the script where the CSV file is located.
+$CSVPath = "$PSScriptRoot\employees-template.csv"
+$DomainSuffix = "DC=corp,DC=local" # IMPORTANTE: Cambia "corp.local" por el dominio de tu servidor
+$BaseOU = "OU=Usuarios,$DomainSuffix" # Asegúrate de que esta OU principal exista en tu AD
 
 # --- STEP 2: Import Active Directory Module ---
-# Ensure the server has the Active Directory tools loaded.
+try {
+    Import-Module ActiveDirectory -ErrorAction Stop
+    Write-Host "[INFO] Active Directory module loaded successfully." -ForegroundColor Green
+}
+catch {
+    Write-Warning "[ERROR] Active Directory module is not installed. Please run on a Domain Controller."
+    Exit
+}
 
 # --- STEP 3: Load and Read the CSV File ---
-# Read the employee data row by row.
+if (-Not (Test-Path $CSVPath)) {
+    Write-Warning "[ERROR] The CSV file was not found at: $CSVPath"
+    Exit
+}
+
+$Employees = Import-Csv -Path $CSVPath
+Write-Host "[INFO] Successfully loaded $($Employees.Count) employees from CSV." -ForegroundColor Cyan
 
 # --- STEP 4: Process Each Employee (Loop) ---
-# For each employee in the CSV:
-#  a. Check if the Department OU exists. If not, create it.
-#  b. Generate a secure, unique sAMAccountName (username).
-#  c. Check if the user already exists (Idempotency).
-#  d. Create the new AD User with properties (Title, Office, Email).
+foreach ($Employee in $Employees) {
+    # Clean up empty spaces from the CSV data
+    $FirstName  = $Employee.FirstName.Trim()
+    $LastName   = $Employee.LastName.Trim()
+    $Department = $Employee.Department.Trim()
+    $Title      = $Employee.Title.Trim()
+    $Office     = $Employee.Office.Trim()
+
+    # Generate a unique sAMAccountName (Format: firstname.lastname)
+    $sAMAccountName = "$FirstName.$LastName".ToLower()
+    
+    # Define the exact OU path for this department
+    $TargetOU = "OU=$Department,$BaseOU"
+
+    # 4a. Check if the Department OU exists. If not, create it dynamically.
+    if (-Not (Get-ADOrganizationalUnit -Filter "Name -eq '$Department'" -SearchBase $BaseOU -ErrorAction SilentlyContinue)) {
+        Write-Host "[ACTION] Department OU '$Department' not found. Creating it..." -ForegroundColor Yellow
+        New-ADOrganizationalUnit -Name $Department -Path $BaseOU -ProtectedFromAccidentalDeletion $false
+    }
+
+    # 4b. Idempotency Check: Does the user already exist?
+    $ExistingUser = Get-ADUser -Filter {sAMAccountName -eq $sAMAccountName} -ErrorAction SilentlyContinue
+
+    if ($ExistingUser) {
+        # If user exists, we skip to avoid red errors. 
+        Write-Host "[SKIP] User $sAMAccountName already exists. Skipping creation." -ForegroundColor DarkGray
+    } else {
+        # 4c. Create the new User
+        Write-Host "[ACTION] Provisioning new user account: $sAMAccountName" -ForegroundColor Green
+        
+        $Password = ConvertTo-SecureString "TemporalPass2026!" -AsPlainText -Force
+
+        New-ADUser -Name "$FirstName $LastName" `
+                   -GivenName $FirstName `
+                   -Surname $LastName `
+                   -sAMAccountName $sAMAccountName `
+                   -UserPrincipalName "$sAMAccountName@corp.local" `#Cambiar por el domnio real de tu servidor
+                   -Path $TargetOU `
+                   -Title $Title `
+                   -Office $Office `
+                   -AccountPassword $Password `
+                   -ChangePasswordAtLogon $true `
+                   -Enabled $true
+    }
+}
+
+Write-Host "`n[SUCCESS] Corporate Onboarding Script completed." -ForegroundColor Green
