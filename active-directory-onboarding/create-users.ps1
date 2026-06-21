@@ -56,7 +56,8 @@ function New-SecurePassword {
 
 # --- STEP 1: Define Parameters and Paths ---
 $CSVPath = "$PSScriptRoot\employees-template.csv"
-$DomainSuffix = "DC=tecnofacil,DC=es" 
+$DomainSuffix = (Get-adDomain).DistinguishedName
+$UPNSuffix = (Get-ADDomain).DNSRoot
 $BaseOU = "OU=Usuarios,$DomainSuffix" 
 
 # --- STEP 2: Import Active Directory Module ---
@@ -94,8 +95,8 @@ foreach ($Employee in $Employees) {
     $FirstName  = $Employee.FirstName.Trim()
     $LastName   = $Employee.LastName.Trim()
     $Department = $Employee.Department.Trim()
-    $Title      = $Employee.Title.Trim()
-    $Office     = $Employee.Office.Trim()
+    $Title  = if (-not [String]::IsNullOrWhiteSpace($Employee.Title))  { $Employee.Title.Trim()  } else { "" }
+    $Office = if (-not [String]::IsNullOrWhiteSpace($Employee.Office)) { $Employee.Office.Trim() } else { "" }
 
     $sAMAccountName = "$FirstName.$LastName".ToLower()
 
