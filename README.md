@@ -9,6 +9,9 @@ Each folder contains its own specialized automation solution, detailed documenta
 *   **[Active Directory Corporate Onboarding](./active-directory-onboarding):** An automated, idempotent user provisioning system using CSV data feeds, secure random credentials, and advanced persistent logging.
 
 ---
+<details>
+  <summary>🌐 <b>Versión en Español</b></summary>
+  <br>
 
 # Portafolio de Automatización de Windows Server y Entornos Empresariales
 
@@ -19,6 +22,8 @@ Bienvenido a mi repositorio de automatización empresarial. Este espacio central
 Cada carpeta contiene su propia solución de automatización especializada, documentación detallada y guías de despliegue:
 
 *   **[Incorporación Corporativa de Active Directory](./active-directory-onboarding):** Un sistema de aprovisionamiento de usuarios automatizado e idempotente que utiliza fuentes de datos CSV, generación de credenciales seguras aleatorias y un mecanismo avanzado de registro de logs persistentes.
+
+</details>
 
 ---
 *Maintained by Ricardo Leal — Senior Systems Administrator | Cloud & Hybrid Infrastructure | Azure, AD, ITIL*
