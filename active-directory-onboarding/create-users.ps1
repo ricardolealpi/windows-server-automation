@@ -145,28 +145,40 @@ foreach ($Employee in $Employees) {
         Write-Log -Message "User $sAMAccountName ($Department) already exists. Skipping creation." -Level "SKIP"
         continue 
     } else {
-        # 4c. Create the new User
-        Write-Log -Message "Provisioning new user account: $sAMAccountName" -Level "ACTION"
+        # 4c. Create the new user
+        # Wrapped New-ADUser in try/catch to log failures per user without aborting the entire onboarding batch.
+        Write-Log -Message "Provisioning new user account: $sAMAccountName ($Department)" -Level "ACTION"
         
         $PlainPassword = New-SecurePassword
-        $Password = ConvertTo-SecureString $PlainPassword -AsPlainText -Force
-
-        # AD Creation with strict uniqueness and complete attributes
-        New-ADUser -Name $DisplayName `
-                   -DisplayName $DisplayName `
-                   -GivenName $FirstName `
-                   -Surname $LastName `
-                   -Department $Department `
-                   -sAMAccountName $sAMAccountName `
-                   -UserPrincipalName "$sAMAccountName@tecnofacil.es" `
-                   -Path $TargetOU `
-                   -Title $Title `
-                   -Office $Office `
-                   -AccountPassword $Password `
-                   -ChangePasswordAtLogon $true `
-                   -Enabled $true
-
-        Write-Log -Message "Temporary password for ${sAMAccountName}: $PlainPassword" -Level "INFO"
+        $SecurePassword = ConvertTo-SecureString $PlainPassword -AsPlainText -Force
+    
+        try {
+            New-ADUser -Name $DisplayName `
+                    -DisplayName $DisplayName `
+                    -GivenName $FirstName `
+                    -Surname $LastName `
+                    -Department $Department `
+                    -sAMAccountName $sAMAccountName `
+                    -UserPrincipalName "$sAMAccountName@$UPNSuffix" `
+                    -Path $TargetOU `
+                    -Title $Title `
+                    -Office $Office `
+                    -AccountPassword $SecurePassword `
+                    -ChangePasswordAtLogon $true `
+                    -Enabled $true
+    
+            Write-Log -Message "User '$sAMAccountName' created successfully." -Level "SUCCESS"
+    
+            # COMMIT 6: Security notice — temporary password is logged to onboarding.log
+            # in plaintext to allow the IT team to communicate it to the new hire.
+            # PRODUCTION NOTE: In regulated environments, replace this with a secure
+            # delivery mechanism (e.g., Azure Key Vault secret, encrypted email via
+            # Microsoft Graph API, or a privileged access workstation clipboard).
+            Write-Log -Message "Temporary password for ${sAMAccountName}: $PlainPassword" -Level "INFO"
+        }
+        catch {
+            Write-Log -Message "Failed to create user '$sAMAccountName'. Error: $($_.Exception.Message)" -Level "ERROR"
+        }
     }
 }
 
