@@ -4,6 +4,14 @@
 #              Generates secure random passwords, ensures strict idempotency,
 #              handles naming collisions, and maintains centralized persistent logging.
 # Author: Ricardo Leal
+# Version: 2.0.0
+# Changelog:
+#   v2.0.0 - Replaced deprecated System.Web password generator with RNGCryptoServiceProvider
+#           - Removed dead else block (duplicate user creation logic)
+#           - Wrapped AD write operations in try/catch for graceful error handling
+#           - Added null/empty guards for optional CSV fields (Title, Office)
+#           - Domain and UPN suffix now auto-detected from Active Directory
+#           - Added security notice on plaintext password logging
 # ==============================================================================
 
 # --- FUNCTION: Centralized Logging Mechanism ---
@@ -149,26 +157,6 @@ foreach ($Employee in $Employees) {
                    -GivenName $FirstName `
                    -Surname $LastName `
                    -Department $Department `
-                   -sAMAccountName $sAMAccountName `
-                   -UserPrincipalName "$sAMAccountName@tecnofacil.es" `
-                   -Path $TargetOU `
-                   -Title $Title `
-                   -Office $Office `
-                   -AccountPassword $Password `
-                   -ChangePasswordAtLogon $true `
-                   -Enabled $true
-
-        Write-Log -Message "Temporary password for ${sAMAccountName}: $PlainPassword" -Level "INFO"
-    }else {
-        # 4c. Create the new User
-        Write-Log -Message "Provisioning new user account: $sAMAccountName" -Level "ACTION"
-        
-        $PlainPassword = New-SecurePassword
-        $Password = ConvertTo-SecureString $PlainPassword -AsPlainText -Force
-
-        New-ADUser -Name "$FirstName $LastName" `
-                   -GivenName $FirstName `
-                   -Surname $LastName `
                    -sAMAccountName $sAMAccountName `
                    -UserPrincipalName "$sAMAccountName@tecnofacil.es" `
                    -Path $TargetOU `
