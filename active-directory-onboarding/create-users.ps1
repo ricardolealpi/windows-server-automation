@@ -44,14 +44,14 @@ function Write-Log {
 
 # --- FUNCTION: Generate Random Secure Password ---
 function New-SecurePassword {
+    $Chars  = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*'
     $Length = 16
-    $Assembly = [Reflection.Assembly]::LoadWithPartialName("System.Web")
-    $RandomPassword = [System.Web.Security.Membership]::GeneratePassword($Length, 3)
-    
-    if ($RandomPassword -notmatch "\d") { $RandomPassword += "7" }
-    if ($RandomPassword -notmatch "[A-Z]") { $RandomPassword += "X" }
-    
-    return $RandomPassword
+    $Rng    = [System.Security.Cryptography.RNGCryptoServiceProvider]::new()
+    $Bytes  = New-Object byte[] $Length
+    $Rng.GetBytes($Bytes)
+    $Password = -join ($Bytes | ForEach-Object { $Chars[$_ % $Chars.Length] })
+    $Rng.Dispose()
+    return $Password
 }
 
 # --- STEP 1: Define Parameters and Paths ---
