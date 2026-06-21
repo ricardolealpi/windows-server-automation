@@ -8,6 +8,14 @@ An automated, production-ready PowerShell solution designed to streamline user o
 
 In traditional IT environments, creating user accounts and managing organizational structures manually is slow and prone to errors. This project solves that problem by introducing an automated pipeline. 
 
+## 🖥️ System Compatibility
+
+This script relies on standard Active Directory cmdlets and native .NET classes, ensuring broad compatibility across enterprise environments.
+
+* **Operating Systems:** Windows Server 2025 / 2022 / 2019 / 2016 / 2012 R2
+* **PowerShell Version:** 5.1+
+* **Dependencies:** Requires the `ActiveDirectory` PowerShell module (runs natively on Domain Controllers or endpoints with RSAT installed).
+
 ### Key Features:
 * **Dynamic OU Creation:** The script inspects the Active Directory structure and automatically creates missing Department Organizational Units (OUs) on the fly.
 * **Strict Idempotency:** It can run multiple times without generating errors or duplicating accounts. If a user already exists, the script safely skips them.
@@ -47,6 +55,7 @@ In traditional IT environments, creating user accounts and managing organization
 <details>
   <summary>🌐 <b>Versión en Español</b></summary>
   <br>
+
 # Sistema de Incorporación Corporativa Automatizada para Windows Server 2022
 
 Una solución automatizada en PowerShell diseñada para optimizar el aprovisionamiento de usuarios en entornos de Active Directory. Este script gestiona dinámicamente estructuras organizativas y cuentas de usuario a partir de datos en formato CSV, aplicando estándares de seguridad y buenas prácticas de arquitectura de sistemas.
@@ -54,6 +63,14 @@ Una solución automatizada en PowerShell diseñada para optimizar el aprovisiona
 ## 🚀 Descripción General y Valor de Negocio
 
 En entornos de IT tradicionales, la creación manual de cuentas y la gestión de estructuras de departamentos es un proceso lento y propenso a errores de transcripción. Este proyecto resuelve ese problema introduciendo un flujo de trabajo automatizado.
+
+## 🖥️ Compatibilidad del Sistema
+
+Este script utiliza cmdlets estándar de Active Directory y clases nativas de .NET, garantizando una amplia compatibilidad en entornos empresariales.
+
+* **Sistemas Operativos:** Windows Server 2025 / 2022 / 2019 / 2016 / 2012 R2
+* **Versión de PowerShell:** 5.1+
+* **Dependencias:** Requiere el módulo de PowerShell `ActiveDirectory` (se ejecuta de forma nativa en Controladores de Dominio o en equipos con RSAT instalado).
 
 ### Características Clave:
 * **Creación Dinámica de OUs:** El script inspecciona la estructura de Active Directory y crea automáticamente las Unidades Organizativas (OUs) de los departamentos faltantes sobre la marcha.
