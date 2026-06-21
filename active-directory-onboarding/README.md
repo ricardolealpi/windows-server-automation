@@ -42,7 +42,14 @@ In traditional IT environments, creating user accounts and managing organization
    ```
 
    ---
+# Automated Corporate Onboarding System for Windows Server 2022
+(Aquí va toda la documentación técnica detallada en inglés...)
 
+---
+
+<details>
+  <summary>🌐 <b>Versión en Español</b></summary>
+  <br>
 # Sistema de Incorporación Corporativa Automatizada para Windows Server 2022
 
 Una solución automatizada en PowerShell diseñada para optimizar el aprovisionamiento de usuarios en entornos de Active Directory. Este script gestiona dinámicamente estructuras organizativas y cuentas de usuario a partir de datos en formato CSV, aplicando estándares de seguridad y buenas prácticas de arquitectura de sistemas.
@@ -71,3 +78,5 @@ Este proyecto demuestra competencias clave requeridas en la administración de s
 1. **Ausencia de Hardcoding:** Las raíces del dominio y las rutas de datos están completamente parametrizadas utilizando variables de entorno como `$PSScriptRoot`.
 2. **Programación Defensiva:** Implementa bloques `Try/Catch` para verificar la disponibilidad del módulo de Active Directory antes de la ejecución, deteniendo el proceso limpiamente si faltan requisitos.
 3. **El Puente hacia la Nube:** Dominar la automatización de identidades en Active Directory local es el requisito fundamental para la posterior sincronización de estructuras hacia la nube mediante Microsoft Entra Connect (Azure AD Connect).
+
+</details>
