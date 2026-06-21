@@ -1,5 +1,7 @@
 FirstName,LastName,Department,Title,Office
-John,Doe,IT,Systems Administrator,Madrid
-Jane,Smith,HR,HR Manager,Murcia
-Carlos,Martínez,Finance,Financial Analyst,Barcelona
-Elena,Gómez,IT,Cloud Engineer,Madrid
+John,Doe,IT,Systems Administrator,Madrid-HQ
+Jane,Smith,HR,Talent Acquisition,Madrid-HQ
+,Gomez,IT,Cloud Engineer,Valencia-Branch
+Carlos,Martinez,,SEO Specialist,Barcelona-Hub
+John,Doe,Marketing,Media Manager,Madrid-HQ
+  Elena  ,  Gomez  ,HR,HR Business Partner,Madrid-HQ
