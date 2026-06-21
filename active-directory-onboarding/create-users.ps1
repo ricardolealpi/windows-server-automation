@@ -170,7 +170,7 @@ foreach ($Employee in $Employees) {
     
             Write-Log -Message "User '$sAMAccountName' created successfully." -Level "SUCCESS"
     
-            # COMMIT 6: Security notice — temporary password is logged to onboarding.log
+            # Temporary password is logged to onboarding.log
             # in plaintext to allow the IT team to communicate it to the new hire.
             # PRODUCTION NOTE: In regulated environments, replace this with a secure
             # delivery mechanism (e.g., Azure Key Vault secret, encrypted email via
