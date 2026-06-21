@@ -1,13 +1,28 @@
 # ==============================================================================
 # Script Name: create-users.ps1
-# Description: Automated Corporate Onboarding System for Windows Server 2022, 2019, 2016, and 2012 R2 Active Directory environments. This script reads employee data from a CSV file and creates corresponding user accounts in Active Directory.
+# Description: Automated Corporate Onboarding System for Windows Server environments.
+#              Generates secure random passwords and ensures strict idempotency.
 # Author: Ricardo Leal
 # ==============================================================================
 
+# --- FUNCTION: Generate Random Secure Password ---
+function New-SecurePassword {
+    $Length = 16
+    # Load required assembly for web membership utilities
+    $Assembly = [Reflection.Assembly]::LoadWithPartialName("System.Web")
+    $RandomPassword = [System.Web.Security.Membership]::GeneratePassword($Length, 3)
+    
+    # Enforce standard complexity policies (digits and uppercase letters)
+    if ($RandomPassword -notmatch "\d") { $RandomPassword += "7" }
+    if ($RandomPassword -notmatch "[A-Z]") { $RandomPassword += "X" }
+    
+    return $RandomPassword
+}
+
 # --- STEP 1: Define Parameters and Paths ---
 $CSVPath = "$PSScriptRoot\employees-template.csv"
-$DomainSuffix = "DC=corp,DC=local" # IMPORTANTE: Cambia "corp.local" por el dominio de tu servidor
-$BaseOU = "OU=Usuarios,$DomainSuffix" # Asegúrate de que esta OU principal exista en tu AD
+$DomainSuffix = "DC=corp,DC=local" 
+$BaseOU = "OU=Usuarios,$DomainSuffix" 
 
 # --- STEP 2: Import Active Directory Module ---
 try {
@@ -30,7 +45,7 @@ Write-Host "[INFO] Successfully loaded $($Employees.Count) employees from CSV." 
 
 # --- STEP 4: Process Each Employee (Loop) ---
 foreach ($Employee in $Employees) {
-    # Clean up empty spaces from the CSV data
+    # Clean up trailing spaces from the CSV data
     $FirstName  = $Employee.FirstName.Trim()
     $LastName   = $Employee.LastName.Trim()
     $Department = $Employee.Department.Trim()
@@ -53,25 +68,30 @@ foreach ($Employee in $Employees) {
     $ExistingUser = Get-ADUser -Filter {sAMAccountName -eq $sAMAccountName} -ErrorAction SilentlyContinue
 
     if ($ExistingUser) {
-        # If user exists, we skip to avoid red errors. 
+        # Skip to prevent system execution errors
         Write-Host "[SKIP] User $sAMAccountName already exists. Skipping creation." -ForegroundColor DarkGray
     } else {
         # 4c. Create the new User
         Write-Host "[ACTION] Provisioning new user account: $sAMAccountName" -ForegroundColor Green
         
-        $Password = ConvertTo-SecureString "TemporalPass2026!" -AsPlainText -Force
+        # Generate and convert unique secure credentials
+        $PlainPassword = New-SecurePassword
+        $Password = ConvertTo-SecureString $PlainPassword -AsPlainText -Force
 
         New-ADUser -Name "$FirstName $LastName" `
                    -GivenName $FirstName `
                    -Surname $LastName `
                    -sAMAccountName $sAMAccountName `
-                   -UserPrincipalName "$sAMAccountName@corp.local" `#Cambiar por el domnio real de tu servidor
+                   -UserPrincipalName "$sAMAccountName@corp.local" `
                    -Path $TargetOU `
                    -Title $Title `
                    -Office $Office `
                    -AccountPassword $Password `
                    -ChangePasswordAtLogon $true `
                    -Enabled $true
+
+        # Display transient provisioning credential for administrative Handover
+        Write-Host "[CREDENTIAL] Temporary password for $sAMAccountName: $PlainPassword" -ForegroundColor Yellow
     }
 }
 

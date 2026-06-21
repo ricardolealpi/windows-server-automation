@@ -12,7 +12,7 @@ In traditional IT environments, creating user accounts and managing organization
 * **Dynamic OU Creation:** The script inspects the Active Directory structure and automatically creates missing Department Organizational Units (OUs) on the fly.
 * **Strict Idempotency:** It can run multiple times without generating errors or duplicating accounts. If a user already exists, the script safely skips them.
 * **Standardized Identity Management:** Automatically generates unique usernames (`firstname.lastname`) and configures core AD attributes (`Title`, `Office`, `UPN`).
-* **Enhanced Security:** Assigns a temporary password and enforces the standard policy: **"User must change password at next logon"**.
+* **Enhanced Security (Zero Hardcoding):** Dynamically generates a unique, cryptographically secure 16-character temporary password for each user in real-time, completely removing hardcoded credentials from the source code. It also enforces the standard policy: **"User must change password at next logon"**.
 
 ---
 
@@ -54,7 +54,7 @@ En entornos de IT tradicionales, la creación manual de cuentas y la gestión de
 * **Creación Dinámica de OUs:** El script inspecciona la estructura de Active Directory y crea automáticamente las Unidades Organizativas (OUs) de los departamentos faltantes sobre la marcha.
 * **Idempotencia Estricta:** Puede ejecutarse múltiples veces consecutivas sin generar errores en el servidor ni duplicar cuentas. Si un usuario ya existe, el script lo salta de forma segura.
 * **Gestión de Identidad Estandarizada:** Genera automáticamente nombres de usuario únicos con el formato `nombre.apellido` y configura atributos esenciales de AD (`Puesto`, `Oficina`, `UPN`).
-* **Seguridad Reforzada:** Asigna una contraseña temporal y aplica la directiva estándar de la industria: **"El usuario debe cambiar la contraseña en el próximo inicio de sesión"**.
+* **Seguridad Reforzada (Sin Credenciales Expuestas):** Genera dinámicamente una contraseña temporal única y criptográficamente segura de 16 caracteres para cada usuario en tiempo de ejecución, eliminando por completo las contraseñas escritas en texto plano dentro del código fuente. Aplica la directiva estándar: **"El usuario debe cambiar la contraseña en el próximo inicio de sesión"**.
 
 ## 🛠️ Tecnologías y Requisitos
 
