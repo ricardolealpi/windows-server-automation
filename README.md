@@ -39,3 +39,33 @@ In traditional IT environments, creating user accounts and managing organization
    ```bash
    git clone [https://github.com/ricardolealpi/windows-server-automation.git](https://github.com/ricardolealpi/windows-server-automation.git)
    ```
+
+   ---
+
+# Sistema de Incorporación Corporativa Automatizada para Windows Server 2022
+
+Una solución automatizada en PowerShell diseñada para optimizar el aprovisionamiento de usuarios en entornos de Active Directory. Este script gestiona dinámicamente estructuras organizativas y cuentas de usuario a partir de datos en formato CSV, aplicando estándares de seguridad y buenas prácticas de arquitectura de sistemas.
+
+## 🚀 Descripción General y Valor de Negocio
+
+En entornos de IT tradicionales, la creación manual de cuentas y la gestión de estructuras de departamentos es un proceso lento y propenso a errores de transcripción. Este proyecto resuelve ese problema introduciendo un flujo de trabajo automatizado.
+
+### Características Clave:
+* **Creación Dinámica de OUs:** El script inspecciona la estructura de Active Directory y crea automáticamente las Unidades Organizativas (OUs) de los departamentos faltantes sobre la marcha.
+* **Idempotencia Estricta:** Puede ejecutarse múltiples veces consecutivas sin generar errores en el servidor ni duplicar cuentas. Si un usuario ya existe, el script lo salta de forma segura.
+* **Gestión de Identidad Estandarizada:** Genera automáticamente nombres de usuario únicos con el formato `nombre.apellido` y configura atributos esenciales de AD (`Puesto`, `Oficina`, `UPN`).
+* **Seguridad Reforzada:** Asigna una contraseña temporal y aplica la directiva estándar de la industria: **"El usuario debe cambiar la contraseña en el próximo inicio de sesión"**.
+
+## 🛠️ Tecnologías y Requisitos
+
+* **Sistema Operativo:** Windows Server 2022 (Probado en versión Server Core)
+* **Motor de Automatización:** PowerShell 5.1 / PowerShell 7
+* **Módulos:** Módulo oficial de Microsoft `ActiveDirectory`
+* **Formato de Datos:** CSV estándar (valores separados por comas)
+
+## 🧠 Perspectiva de Arquitectura (Contexto para el Portafolio)
+
+Este proyecto demuestra competencias clave requeridas en la administración de sistemas moderna y la **Arquitectura de Nube Híbrida**:
+1. **Ausencia de Hardcoding:** Las raíces del dominio y las rutas de datos están completamente parametrizadas utilizando variables de entorno como `$PSScriptRoot`.
+2. **Programación Defensiva:** Implementa bloques `Try/Catch` para verificar la disponibilidad del módulo de Active Directory antes de la ejecución, deteniendo el proceso limpiamente si faltan requisitos.
+3. **El Puente hacia la Nube:** Dominar la automatización de identidades en Active Directory local es el requisito fundamental para la posterior sincronización de estructuras hacia la nube mediante Microsoft Entra Connect (Azure AD Connect).
