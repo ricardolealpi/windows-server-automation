@@ -58,8 +58,6 @@ Write-Log -Message "Audit started. Inactive threshold: $InactiveDaysThreshold da
 
 # ==============================================================================
 # CATEGORY 1 — Inactive Accounts (no login in 90+ days)
-# Detects enabled accounts with no login activity within the threshold.
-# LastLogonDate is replicated across DCs; reliable for audit purposes.
 # ==============================================================================
 Write-Log -Message "Scanning for inactive accounts (no login in $InactiveDaysThreshold+ days)..." -Level "ACTION"
 
@@ -89,11 +87,7 @@ catch {
 }
 
 # ==============================================================================
-# COMMIT 2 — CATEGORY 2: Password Never Expires
-# Enabled accounts with PasswordNeverExpires = $true are a direct violation
-# of password rotation policies and a common finding in security audits.
-# RiskLevel is HIGH because these accounts are often service or admin accounts
-# with elevated privileges that are never rotated.
+# CATEGORY 2 — Password Never Expires
 # ==============================================================================
 Write-Log -Message "Scanning for accounts with password set to never expire..." -Level "ACTION"
 
@@ -122,17 +116,13 @@ try {
     }
 
     Write-Log -Message "Accounts with non-expiring password found: $(@($NeverExpiresUsers).Count)" -Level "INFO"
-
 }
 catch {
     Write-Log -Message "Failed to query password-never-expires accounts. Error: $($_.Exception.Message)" -Level "ERROR"
 }
 
 # ==============================================================================
-# COMMIT 2 — CATEGORY 3: Stale Disabled Accounts
-# Accounts disabled for 30+ days should be reviewed for permanent removal.
-# Leaving disabled accounts in AD indefinitely creates noise and potential
-# reactivation risk if access controls are misconfigured.
+# CATEGORY 3 — Stale Disabled Accounts (disabled for 30+ days)
 # ==============================================================================
 Write-Log -Message "Scanning for stale disabled accounts (disabled for $DisabledDaysThreshold+ days)..." -Level "ACTION"
 
@@ -169,6 +159,89 @@ catch {
     Write-Log -Message "Failed to query disabled accounts. Error: $($_.Exception.Message)" -Level "ERROR"
 }
 
-# --- SUMMARY ---
-Write-Log -Message "Audit scan complete. Total findings: $($AuditResults.Count)" -Level "SUCCESS"
+# ==============================================================================
+# COMMIT 3 — CATEGORY 4: Users Without Group Membership
+# Enabled accounts that belong to no security or distribution group beyond
+# the default "Domain Users" are invisible to RBAC policies and permission
+# structures. This is a governance gap, not necessarily a security risk.
+# RiskLevel: Medium — the account exists but has no controlled access scope.
+# ==============================================================================
+Write-Log -Message "Scanning for users with no group membership beyond Domain Users..." -Level "ACTION"
+
+try {
+    $AllUsers = Get-ADUser -Filter { Enabled -eq $true } -Properties MemberOf, Department, Title, DistinguishedName
+
+    $NoGroupUsers = $AllUsers | Where-Object {
+        # MemberOf only lists explicitly assigned groups — Domain Users is implicit
+        # so an empty MemberOf means the account has no assigned groups at all
+        ($_.MemberOf -eq $null -or @($_.MemberOf).Count -eq 0)
+    }
+
+    foreach ($User in $NoGroupUsers) {
+        $AuditResults.Add([PSCustomObject]@{
+            SamAccountName = $User.SamAccountName
+            DisplayName    = $User.Name
+            Department     = $User.Department
+            Title          = $User.Title
+            RiskCategory   = "No Group Membership"
+            RiskLevel      = "Medium"
+            Detail         = "Account has no explicitly assigned groups (Domain Users only)"
+            DN             = $User.DistinguishedName
+        })
+    }
+
+    Write-Log -Message "Users with no group membership found: $(@($NoGroupUsers).Count)" -Level "INFO"
+}
+catch {
+    Write-Log -Message "Failed to query group membership. Error: $($_.Exception.Message)" -Level "ERROR"
+}
+
+# ==============================================================================
+# COMMIT 3 — CATEGORY 5: Users Without UPN Configured
+# A missing or malformed UPN (UserPrincipalName) breaks modern authentication
+# flows including Azure AD Connect sync, ADFS, and Microsoft 365 SSO.
+# This is critical in hybrid environments — accounts without a valid UPN
+# cannot be synced to Entra ID.
+# RiskLevel: High in hybrid environments, Medium in on-premises only.
+# ==============================================================================
+Write-Log -Message "Scanning for users with missing or malformed UPN..." -Level "ACTION"
+
+try {
+    $NoUPNUsers = Get-ADUser -Filter { Enabled -eq $true } -Properties UserPrincipalName, Department, Title, DistinguishedName |
+    Where-Object {
+        [String]::IsNullOrWhiteSpace($_.UserPrincipalName) -or
+        $_.UserPrincipalName -notmatch '^[^@]+@[^@]+\.[^@]+$'
+    }
+
+    foreach ($User in $NoUPNUsers) {
+        $UPNValue = if ([String]::IsNullOrWhiteSpace($User.UserPrincipalName)) {
+            "Not configured"
+        } else {
+            "Malformed: $($User.UserPrincipalName)"
+        }
+
+        $AuditResults.Add([PSCustomObject]@{
+            SamAccountName = $User.SamAccountName
+            DisplayName    = $User.Name
+            Department     = $User.Department
+            Title          = $User.Title
+            RiskCategory   = "Missing or Malformed UPN"
+            RiskLevel      = "High"
+            Detail         = $UPNValue
+            DN             = $User.DistinguishedName
+        })
+    }
+
+    Write-Log -Message "Users with missing or malformed UPN found: $(@($NoUPNUsers).Count)" -Level "INFO"
+}
+catch {
+    Write-Log -Message "Failed to query UPN status. Error: $($_.Exception.Message)" -Level "ERROR"
+}
+
+# --- FINAL SUMMARY ---
+$HighRisk   = @($AuditResults | Where-Object { $_.RiskLevel -eq "High"   }).Count
+$MediumRisk = @($AuditResults | Where-Object { $_.RiskLevel -eq "Medium" }).Count
+$LowRisk    = @($AuditResults | Where-Object { $_.RiskLevel -eq "Low"    }).Count
+
+Write-Log -Message "Audit scan complete. Total findings: $($AuditResults.Count) | High: $HighRisk | Medium: $MediumRisk | Low: $LowRisk" -Level "SUCCESS"
 Write-Log -Message "CSV and HTML export coming in next iterations.`n" -Level "INFO"
