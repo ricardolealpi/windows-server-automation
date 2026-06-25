@@ -82,7 +82,7 @@ try {
         })
     }
 
-    Write-Log -Message "Inactive accounts found: $($InactiveUsers.Count)" -Level "INFO"
+    Write-Log -Message "Inactive accounts found: $(@($InactiveUsers).Count)" -Level "INFO"
 }
 catch {
     Write-Log -Message "Failed to query inactive accounts. Error: $($_.Exception.Message)" -Level "ERROR"
@@ -121,7 +121,8 @@ try {
         })
     }
 
-    Write-Log -Message "Accounts with non-expiring password found: $($NeverExpiresUsers.Count)" -Level "INFO"
+    Write-Log -Message "Accounts with non-expiring password found: $(@($NeverExpiresUsers).Count)" -Level "INFO"
+
 }
 catch {
     Write-Log -Message "Failed to query password-never-expires accounts. Error: $($_.Exception.Message)" -Level "ERROR"
@@ -162,7 +163,7 @@ try {
         })
     }
 
-    Write-Log -Message "Stale disabled accounts found: $($DisabledUsers.Count)" -Level "INFO"
+    Write-Log -Message "Stale disabled accounts found: $(@($DisabledUsers).Count)" -Level "INFO"
 }
 catch {
     Write-Log -Message "Failed to query disabled accounts. Error: $($_.Exception.Message)" -Level "ERROR"
